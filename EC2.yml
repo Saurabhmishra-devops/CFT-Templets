@@ -1,0 +1,34 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Parameters:
+  SubnetId:
+    Description: Subnet ID for the EC2 instance
+    Type: AWS::EC2::Subnet::Id
+  SecurityGroupId:
+    Description: Security Group ID for the EC2 instance
+    Type: AWS::EC2::SecurityGroup::Id
+
+Resources:
+  MyEC2Instance:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: t3.micro # Free Tier eligible, but verify for your region/account
+      ImageId: ami-0fd3ac4abb734302a # Amazon Linux 2 AMI (verify it is correct for your region)
+      KeyName: devtest # Reference to the KeyName parameter
+      SubnetId: subnet-031b4140270ce3665 # Reference to the SubnetId parameter
+      SecurityGroupIds:
+        - sg-09cc201c876070f24 # Reference to the SecurityGroupId parameter
+      Tags:
+        - Key: Name
+          Value: Saurabh
+
+Outputs:
+  InstanceId:
+    Description: "Instance ID of the newly created EC2 instance"
+    Value:
+      Ref: MyEC2Instance
+  PublicIP:
+    Description: "Public IP address of the EC2 instance"
+    Value:
+      Fn::GetAtt:
+        - MyEC2Instance
+        - PublicIp

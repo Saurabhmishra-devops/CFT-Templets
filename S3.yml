@@ -1,0 +1,28 @@
+AWSTemplateFormatVersion: "2010-09-09"
+
+Description: CloudFormation template for creating a secure and versioned S3 bucket
+
+Resources:
+  S3Bucket:
+    Type: AWS::S3::Bucket # Define an S3 bucket resource
+    DeletionPolicy: Retain # Retain the bucket on stack deletion
+    Properties:
+      BucketName: saurabhmishra-test-bucket-cft # Replace with your desired bucket name
+      AccessControl: Private # Set bucket to private
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+      VersioningConfiguration:
+        Status: Enabled # Enable versioning for the bucket
+
+Outputs:
+  S3BucketName:
+    Description: Name of the created S3 bucket
+    Value: 
+      Ref: S3Bucket

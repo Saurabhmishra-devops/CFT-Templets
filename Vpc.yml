@@ -1,0 +1,139 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'CloudFormation template to create a VPC with one public and one private subnet'
+
+Parameters:
+  VpcCidr:
+    Type: String
+    Default: '192.168.0.0/16'
+    Description: CIDR block for the VPC
+    
+  PublicSubnetCidr:
+    Type: String
+    Default: '192.168.1.0/24'
+    Description: CIDR block for the public subnet
+    
+  PrivateSubnetCidr:
+    Type: String
+    Default: '192.168.2.0/24'
+    Description: CIDR block for the private subnet
+    
+  AvailabilityZone:
+    Type: AWS::EC2::AvailabilityZone::Name
+    Description: Availability Zone for the subnets
+
+Resources:
+  # VPC
+  MyVPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: 192.168.0.0/16
+      EnableDnsHostnames: true
+      EnableDnsSupport: true
+      Tags:
+        - Key: Name
+          Value: MyVPC
+
+  # Internet Gateway
+  MyInternetGateway:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+        - Key: Name
+          Value: MyInternetGateway
+
+  # Attach Internet Gateway to VPC
+  AttachGateway:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      VpcId: MyVPC
+      InternetGatewayId: MyInternetGateway
+
+  # Public Subnet
+  PublicSubnet:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: MyVPC
+      CidrBlock: 192.168.1.0/24
+      AvailabilityZone: AvailabilityZone
+      MapPublicIpOnLaunch: true
+      Tags:
+        - Key: Name
+          Value: PublicSubnet
+
+  # Private Subnet
+  PrivateSubnet:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: MyVPC
+      CidrBlock: 192.168.2.0/24
+      AvailabilityZone: AvailabilityZone
+      Tags:
+        - Key: Name
+          Value: PrivateSubnet
+
+  # Public Route Table
+  PublicRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: MyVPC
+      Tags:
+        - Key: Name
+          Value: PublicRouteTable
+
+  # Public Route (Internet Gateway)
+  PublicRoute:
+    Type: AWS::EC2::Route
+    DependsOn: AttachGateway
+    Properties:
+      RouteTableId: PublicRouteTable
+      DestinationCidrBlock: '0.0.0.0/0'
+      GatewayId: MyInternetGateway
+
+  # Associate Public Subnet with Public Route Table
+  PublicSubnetRouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: PublicSubnet
+      RouteTableId: PublicRouteTable
+
+  # Private Route Table
+  PrivateRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: MyVPC
+      Tags:
+        - Key: Name
+          Value: PrivateRouteTable
+
+  # Associate Private Subnet with Private Route Table
+  PrivateSubnetRouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      SubnetId: PrivateSubnet
+      RouteTableId: PrivateRouteTable
+
+  # Security Group for Public Subnet (Web Servers)
+  PublicSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Security group for public subnet resources
+      VpcId: MyVPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: '0.0.0.0/0'
+          Description: Allow HTTP traffic
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          CidrIp: '0.0.0.0/0'
+          Description: Allow HTTPS traffic
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: '0.0.0.0/0'
+          Description: Allow SSH access (consider restricting to your IP)
+      Tags:
+        - Key: Name
+          Value: PublicSecurityGroup
